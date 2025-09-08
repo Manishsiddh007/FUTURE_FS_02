@@ -1,5 +1,4 @@
 
-@@ -1,73 +1,4 @@
 # Welcome to your Lovable project
 
 ## Project info
