@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CreditCard, Truck, Shield } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 
@@ -28,6 +29,7 @@ interface CheckoutForm {
 
 export const Checkout = ({ onBack }: CheckoutProps) => {
   const { items, getTotalPrice, clearCart } = useCartStore();
+  const { addOrder, user, isAuthenticated } = useAuthStore();
   const [isProcessing, setIsProcessing] = useState(false);
   
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutForm>();
@@ -38,14 +40,47 @@ export const Checkout = ({ onBack }: CheckoutProps) => {
   const finalTotal = totalPrice + shipping + tax;
 
   const onSubmit = async (data: CheckoutForm) => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Login required",
+        description: "Please login to complete your purchase.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 2000));
     
+    const orderNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
+    
+    // Add order to user's history
+    addOrder({
+      userId: user.id,
+      items: items.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        image: item.product.image
+      })),
+      total: finalTotal,
+      status: 'processing',
+      shippingAddress: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        address: data.address,
+        city: data.city,
+        zipCode: data.zipCode,
+        email: data.email
+      }
+    });
+    
     toast({
       title: "Order placed successfully!",
-      description: `Your order #${Math.random().toString(36).substr(2, 9).toUpperCase()} has been confirmed.`,
+      description: `Your order #${orderNumber} has been confirmed and will be processed shortly.`,
     });
     
     clearCart();

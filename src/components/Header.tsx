@@ -1,16 +1,21 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, ShoppingBag, Store } from 'lucide-react';
+import { Search, ShoppingBag, Store, User, LogIn } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface HeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onLoginClick: () => void;
+  onProfileClick: () => void;
 }
 
-export const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
+export const Header = ({ searchQuery, onSearchChange, onLoginClick, onProfileClick }: HeaderProps) => {
   const { toggleCart, getTotalItems } = useCartStore();
+  const { user, isAuthenticated } = useAuthStore();
   const totalItems = getTotalItems();
 
   return (
@@ -20,7 +25,7 @@ export const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
         <div className="flex items-center gap-2">
           <Store className="h-6 w-6 text-brand" />
           <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            TechStore
+            FUTURE_FS_02
           </h1>
         </div>
 
@@ -35,22 +40,48 @@ export const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
           />
         </div>
 
-        {/* Cart Button */}
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={toggleCart}
-          className="relative hover:bg-brand hover:text-brand-foreground transition-colors"
-        >
-          <ShoppingBag className="h-5 w-5" />
-          {totalItems > 0 && (
-            <Badge 
-              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-brand text-brand-foreground text-xs"
+        {/* User Authentication & Cart */}
+        <div className="flex items-center gap-2">
+          {isAuthenticated ? (
+            <Button
+              variant="ghost"
+              onClick={onProfileClick}
+              className="flex items-center gap-2 hover:bg-brand/10"
             >
-              {totalItems}
-            </Badge>
+              <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-white text-sm font-bold">
+                {user?.firstName[0]}{user?.lastName[0]}
+              </div>
+              <span className="hidden sm:inline">
+                {user?.firstName}
+              </span>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={onLoginClick}
+              className="hover:bg-brand hover:text-brand-foreground transition-colors"
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Sign In</span>
+            </Button>
           )}
-        </Button>
+
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={toggleCart}
+            className="relative hover:bg-brand hover:text-brand-foreground transition-colors"
+          >
+            <ShoppingBag className="h-5 w-5" />
+            {totalItems > 0 && (
+              <Badge 
+                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-brand text-brand-foreground text-xs"
+              >
+                {totalItems}
+              </Badge>
+            )}
+          </Button>
+        </div>
       </div>
     </header>
   );

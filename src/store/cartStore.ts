@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Product, CartItem } from '@/types/product';
 
 interface CartStore {
@@ -15,7 +16,9 @@ interface CartStore {
   getTotalPrice: () => number;
 }
 
-export const useCartStore = create<CartStore>((set, get) => ({
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set, get) => ({
   items: [],
   isOpen: false,
   
@@ -78,4 +81,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
   getTotalPrice: () => {
     return get().items.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   }
-}));
+    }),
+    {
+      name: 'cart-storage',
+    }
+  )
+);

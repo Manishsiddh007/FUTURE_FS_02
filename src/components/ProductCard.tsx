@@ -2,8 +2,10 @@ import { Product } from '@/types/product';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
+import { useReviewStore } from '@/store/reviewStore';
 import { toast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
@@ -12,6 +14,12 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const addItem = useCartStore((state) => state.addItem);
+  const { isAuthenticated, addToWishlist, removeFromWishlist, isInWishlist } = useAuthStore();
+  const { getProductAverageRating, getProductReviews } = useReviewStore();
+
+  const averageRating = getProductAverageRating(product.id);
+  const reviewCount = getProductReviews(product.id).length;
+  const isWishlisted = isInWishlist(product.id);
 
   const handleAddToCart = () => {
     addItem(product);
@@ -19,6 +27,31 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       title: "Added to cart",
       description: `${product.name} has been added to your cart.`,
     });
+  };
+
+  const handleWishlistToggle = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login required",
+        description: "Please login to add items to your wishlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isWishlisted) {
+      removeFromWishlist(product.id);
+      toast({
+        title: "Removed from wishlist",
+        description: `${product.name} has been removed from your wishlist.`,
+      });
+    } else {
+      addToWishlist(product.id);
+      toast({
+        title: "Added to wishlist",
+        description: `${product.name} has been added to your wishlist.`,
+      });
+    }
   };
 
   return (
@@ -35,9 +68,19 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         >
           {product.category}
         </Badge>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`absolute top-3 right-3 h-8 w-8 p-0 rounded-full bg-background/80 backdrop-blur-sm ${
+            isWishlisted ? 'text-red-500' : 'text-muted-foreground'
+          } hover:text-red-500 transition-colors`}
+          onClick={handleWishlistToggle}
+        >
+          <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+        </Button>
         {!product.inStock && (
           <Badge 
-            className="absolute top-3 right-3 bg-destructive text-destructive-foreground"
+            className="absolute bottom-3 right-3 bg-destructive text-destructive-foreground"
             variant="destructive"
           >
             Out of Stock
@@ -55,8 +98,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         
         <div className="flex items-center gap-1 mb-3">
           <Star className="h-4 w-4 fill-warning text-warning" />
-          <span className="text-sm font-medium">{product.rating}</span>
-          <span className="text-sm text-muted-foreground">(4.2k reviews)</span>
+          <span className="text-sm font-medium">
+            {averageRating > 0 ? averageRating : product.rating}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            ({reviewCount > 0 ? `${reviewCount} reviews` : '4.2k reviews'})
+          </span>
         </div>
         
         <div className="text-2xl font-bold text-brand">
